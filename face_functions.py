@@ -5,8 +5,9 @@
 # 
 # ## This python file contains several functions which can be called by:
 # 
-#     1. import face_functions
-#     2. Use any function in here by calling face_functions.function-name(args) at another IDE.
+#     1. Download this notebook as python file (.py).
+#     2. import face_functions at another IDE.
+#     3. Use any function in here by calling face_functions.function-name(args) at another IDE.
 #    
 # ## List of Functions Available:
 # 
@@ -15,23 +16,26 @@
 #     3. normalise_face(face_array, n, m): return average face (1,10000), zeromean face (n,10000), eigenvalues (1,m), eigenvectors (10000,m), eigenfaces (m,10000), pca faces (n,m), covariance matrix (10000,10000)
 #     4. normalise_test_face(test_face_array, avg_face, eigenvectors): return zeromean test face(1,10000), pca test face (1,m). 
 #     5. plot_gallery(): return plots of eigenfaces. 
-#     6. face_recognition(): real time face recognition without mask.
-#     7. face_mask_recognition(): real time face recognition with mask.
+#     6. face_recognition(): real time face recognition without mask via LBPH Face Recognizer.
+#     7. face_mask_recognition(): real time face recognition with mask via LBPH Face Recognizer.
 #     8. pca_face_recognition(): real time pca face recognition without mask using SVM.
-#     9. to_rgb(image): return grayscale image.
+#     9. to_rgb(image): convert bgr to rgb.
 #     10. face_detection(cascade, color_img, scaleFactor): return grayscale image and color face roi. 
 #     11. face_eyes_detection(cascade1, cascade2, color_img, scaleFactor): return grayscale image and color face roi. 
 #     12. face_eyes_smile_detection(cascade1, cascade2, cascade3, color_img, scaleFactor): return same as above.
-#     13. illumination_normalize(array1d): return grayscale face array (n,10000), bgr face array (n,100,100), ycrcb face array (n, 100, 100).
-#     14. dimension_reduction(face_encoding, n, m): return eigenvalues, eigenvector (2622,m), eigenface, face_train (n,m), covariance matrix.
-#     15. findCosineSimilarity(source, test): return scalar value ranges between 0 and 1.
+#     13. illumination_normalize(rgb_image_array): return rgb face array (n,100,100), ycrcb face array (n, 100, 100).
+#     14. dimension_reduction(face_encoding, n, m): return eigenvalues, eigenvector (2622,m), face_train (n,m), covariance matrix (2622,2622).
+#     15. findCosineSimilarity(face_database, test_face): return scalar value ranges between 0 and 1.
 #     16. vgg_face_recognition(name_array, face_train, eigenvector): real time face recogniton using Euclidean Distance.
+#     17. lbph_face_recognition(): real time face recognition with or without mask.
 # 
-# **Note: In normalise_face(), change the m value according for different top m features.**
+# **Note: #3 In normalise_face(), change the n & m values according for different number of samples and top m features, respectively.**
 # 
-# **Note: In plot_gallery(), Change the n_row and n_col accordingly. n_row * n_col should be equal to the m value.**
+# **Note: In #14 dimension_reduction(), change the n & m values according for different number of samples and top m features, respectively.**
+# 
+# **Note: In #5 plot_gallery(), Change the n_row and n_col accordingly. n_row * n_col should be equal to the m value.**
 
-# In[1]:
+# In[2]:
 
 
 # Import dependencies
@@ -118,15 +122,15 @@ def get_faces_labels_pca(resized_images_path='Resized_Faces'):
     return faces_array, labels_array, label_ids
 
 
-# In[3]:
+# In[1]:
 
 
 #3 Process training faces for training SVM
-def normalise_face(image, n=65, m=40):
-    # Find average face based on face dataset, return shape (50, 10000)
+def normalise_face(image, n=100, m=40):
+    # Find average face based on face dataset, return shape (100, 10000)
     avg_face = np.mean(image, axis=0)
     print("avg face (1,10000): ", avg_face.shape)
-    # Compute zero mean faces, return shape (50, 10000)
+    # Compute zero mean faces, return shape (100, 10000)
     zeromean_face = image - avg_face
     print("zero mean face (n,10000): ", zeromean_face.shape)
     # Compute covariance matrix, return shape (10000, 10000)
@@ -142,7 +146,7 @@ def normalise_face(image, n=65, m=40):
     # Compute eigenfaces, return shape (m, 10000)
     eigenfaces = eigenvectors.T
     print("eigenface shape (m,10000)", eigenfaces.shape)
-    # Project zero mean faces into eigen space for training, return shape (50, m)
+    # Project zero mean faces into eigen space for training, return shape (100, m)
     face_train = np.dot(zeromean_face, eigenvectors)
     print("face_train (n,m): ", face_train.shape)
     return avg_face, zeromean_face, eigenvalues, eigenvectors, eigenfaces, face_train, covariance
@@ -173,7 +177,7 @@ def plot_gallery(images, titles, h, w, n_row=8, n_col=5):
         plt.xticks(())
 
 
-# In[7]:
+# In[2]:
 
 
 #6 Real-Time Detection using webcam after training the face recognizer
@@ -192,8 +196,10 @@ def face_recognition():
     #Load face labels
     # with open('face_eye_smile_labels.pickle', 'rb') as f:
     #     y_train = np.array(pickle.load(f))
-    names = ['Bryan_Lee', 'Bryan_Lim', 'Edmund', 'Malvern', 'Ter_Ren', 
-             'Wang_Jue', 'Yi_Cheng', 'Yi_Rong']
+    names = ['Bryan_Lee', 'Bryan_Lim', 'Chin_Fung', 'Darren', 'Edmund', 'John', 'Lam', 
+             'Malvern', 'meinv', 'Nicholas', 'Peter', 'Ter_Ren', 'Wang_Jue', 'Yi_Cheng', 
+             'Yi_Rong', 'Yong_Zhe', 'Yuan_Jun', 'Zhi_jia', 'Zi_Hang', 'Zi_Ying']
+    
     cap.set(3,640) # set Width
     cap.set(4,480) # set Height
     while True:
@@ -239,7 +245,7 @@ def face_recognition():
     cv2.destroyAllWindows()
 
 
-# In[8]:
+# In[3]:
 
 
 # With mask on
@@ -259,8 +265,10 @@ def face_mask_recognition():
     #Load face labels
     # with open('face_eye_smile_labels.pickle', 'rb') as f:
     #     y_train = np.array(pickle.load(f))
-    names = ['Bryan_Lee', 'Bryan_Lim', 'Edmund', 'Malvern', 'Ter_Ren', 
-             'Wang_Jue', 'Yi_Cheng', 'Yi_Rong']
+    names = ['Bryan_Lee', 'Bryan_Lim', 'Chin_Fung', 'Darren', 'Edmund', 'John', 'Lam', 
+             'Malvern', 'meinv', 'Nicholas', 'Peter', 'Ter_Ren', 'Wang_Jue', 'Yi_Cheng', 
+             'Yi_Rong', 'Yong_Zhe', 'Yuan_Jun', 'Zhi_jia', 'Zi_Hang', 'Zi_Ying']
+    
     cap.set(3,640) # set Width
     cap.set(4,480) # set Height
     while True:
@@ -276,17 +284,17 @@ def face_mask_recognition():
     #         for (xx, yy, ww, hh) in smile:
     #             cv2.rectangle(roi_color, (xx, yy), (xx + ww, yy + hh), (0, 0, 255), 2)
         #gray_eyes = cv2.resize((gray[y:y+h,x:x+w]),(100,100))
-        label, conf = face_recognizer.predict(gray)
+            label, conf = face_recognizer.predict(gray)
 
-        if conf<=145:
-            person = names[label]
+            if conf<=145:
+                person = names[label]
 
-        else:
-            person = "Unknown"
+            else:
+                person = "Unknown"
 
-        text = str(label) + person + ":" + str(round(conf,3))
-        cv2.rectangle(frame, (ex, ey), (ex + ew, ey + eh), (255, 0, 0), 2)
-        cv2.putText(frame, text, (ex, ey - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
+            text = str(label) + person + ":" + str(round(conf,3))
+            cv2.rectangle(frame, (ex, ey), (ex + ew, ey + eh), (255, 0, 0), 2)
+            cv2.putText(frame, text, (ex, ey - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
 
         cv2.imshow('frame',frame)
         k = cv2.waitKey(1) & 0xff
@@ -296,7 +304,7 @@ def face_mask_recognition():
     cv2.destroyAllWindows()
 
 
-# In[12]:
+# In[4]:
 
 
 #8 Real Time Detection using SVM
@@ -310,8 +318,10 @@ def pca_face_recognition(avgface, eigenvectors):
 
     cap = cv2.VideoCapture(0)
 
-    names = ['Bryan_Lee', 'Bryan_Lim', 'Edmund', 'Malvern', 'Mei_nv', 'Peter', 'Ter_Ren', 
-             'Wang_Jue', 'Yi_Cheng', 'Yi_Rong', 'Yong_Zhe', 'Zi_Hang', 'Zi_Ying']
+    names = ['Bryan_Lee', 'Bryan_Lim', 'Chin_Fung', 'Darren', 'Edmund', 'John', 'Lam', 
+             'Malvern', 'meinv', 'Nicholas', 'Peter', 'Ter_Ren', 'Wang_Jue', 'Yi_Cheng', 
+             'Yi_Rong', 'Yong_Zhe', 'Yuan_Jun', 'Zhi_jia', 'Zi_Hang', 'Zi_Ying']
+    
     cap.set(3,640) # set Width
     cap.set(4,480) # set Height
     while True:
@@ -448,14 +458,13 @@ def face_eyes_smile_detection(cc1, cc2, cc3, color_img, scaleFactor=1.2):
 
 
 #13
-def illumination_normalize(array1d):
-    image_bgr=[]
+def illumination_normalize(rgb_image_array):
+    image_rgb=[]
     image_ycrcb=[]
-    image_gray=[]
-    for i in array1d:
-        image_reshape = i.reshape(100,100)
-        bgr_image = cv2.cvtColor(image_reshape, cv2.COLOR_GRAY2BGR) # Convert gray to bgr
-        ycrcb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2YCrCb) # Convert bgr to ycrcb
+    
+    for i in rgb_image_array:
+        image_reshape = cv2.resize(i, dsize=(100,100), interpolation=cv2.INTER_AREA)
+        ycrcb_image = cv2.cvtColor(image_reshape, cv2.COLOR_RGB2YCrCb) # Convert rgb image to ycrcb image
         # separate channels
         y, cr, cb = cv2.split(ycrcb_image)
 
@@ -471,28 +480,22 @@ def illumination_normalize(array1d):
         # merge channels back
         ycrcb = cv2.merge([y, cr, cb])
 
-        #convert to BGR
-        output_bgr = cv2.cvtColor(ycrcb, cv2.COLOR_YCrCb2BGR)
+        #convert to RGB
+        output_rgb = cv2.cvtColor(ycrcb, cv2.COLOR_YCrCb2RGB)
         
-        #convert to grayscale
-        output_gray = cv2.cvtColor(output_bgr, cv2.COLOR_BGR2GRAY) # 2D
-        output_gray1d = output_gray.reshape(-1) # 1D
-        
-        image_gray.append(output_gray1d)
-        image_gray_array = np.array(image_gray)
-        image_bgr.append(bgr_image)
-        image_bgr_array = np.array(image_bgr)
+        image_rgb.append(output_rgb)
+        image_rgb_array = np.array(image_rgb)
         image_ycrcb.append(ycrcb_image)
         image_ycrcb_array = np.array(image_ycrcb)
 
-    return image_gray_array, image_bgr_array, image_ycrcb_array
+    return image_rgb_array, image_ycrcb_array
 
 
-# In[1]:
+# In[5]:
 
 
 #14
-def dimension_reduction(face_encoding, n=15, m=100):
+def dimension_reduction(face_encoding, n=100, m=100):
     # Compute covariance matrix, return shape (2622, 2622)
     covariance = np.dot(face_encoding.T, face_encoding) / n
     print("covariance matrix shape (2622, 2622): ", covariance.shape)
@@ -506,30 +509,30 @@ def dimension_reduction(face_encoding, n=15, m=100):
     # Compute eigenfaces, return shape (m, 2622)
     eigenfaces = eigenvectors.T
     print("eigenface shape (m,2622)", eigenfaces.shape)
-    # Project zero mean faces into eigen space for training, return shape (15, m)
+    # Project zero mean faces into eigen space for training, return shape (100, m)
     face_train = np.dot(face_encoding, eigenvectors)
-    print("face_train (15,m): ", face_train.shape)
+    print("face_train (100,m): ", face_train.shape)
     return eigenvalues, eigenvectors, eigenfaces, face_train, covariance
 
 
-# In[2]:
+# In[7]:
 
 
 #15
-def findCosineSimilarity(source, test):
-    a = np.matmul(np.transpose(source), test)
-    b = np.sum(np.multiply(source, source))
-    c = np.sum(np.multiply(test, test))
-    return 1 - (a / (np.sqrt(b) * np.sqrt(c)))
+def findCosineSimilarity(face_database, test_face):
+    a = np.matmul(np.transpose(face_database), test_face)
+    b = np.sum(np.multiply(face_database, face_database))
+    c = np.sum(np.multiply(test_face, test_face))
+    return (a / (np.sqrt(b) * np.sqrt(c)))
 
 
-# In[2]:
+# In[8]:
 
 
 #16
 def vgg_face_recognition(name_array, face_train, eigenvector):
-    faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml') # load classifier
-    eye_glassesCascade = cv2.CascadeClassifier('haarcascade_eye_tree_eyeglasses.xml')
+    faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml') # load face classifier
+    eye_glassesCascade = cv2.CascadeClassifier('haarcascade_eye_tree_eyeglasses.xml') # Load eye classifier
     
     with open('vggface_model.pickle', 'rb') as vggface:
         custom_vgg_model = pickle.load(vggface)
@@ -567,20 +570,17 @@ def vgg_face_recognition(name_array, face_train, eigenvector):
             
             
             found=0
-            min_value=1
+            max_value=0
             for i in range(len(name_array)):
                 similarity = findCosineSimilarity(face_train[i], captured_representation.T)
-                if((similarity < 0.1) & (similarity < min_value)):
-                    min_value = similarity
+                if((similarity > 0.8) & (similarity > max_value)):
+                    max_value = similarity
                     name = name_array[i]
                     found=1
             if (found==1):
-                #cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
                 cv2.putText(frame, name, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
-                #cv2.putText(frame, name, (int(x+w), int(y-30)), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
-                print(name, min_value)
-            
-                    
+                print(name, max_value)
+             
             elif (found==0):
                 cv2.putText(frame, 'Unknown', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
                 print('Unknown', similarity)
@@ -591,7 +591,99 @@ def vgg_face_recognition(name_array, face_train, eigenvector):
             break
     cap.release()
     cv2.destroyAllWindows()
-    return
+
+
+# In[1]:
+
+
+#17 Real-Time Detection using webcam after training the face recognizer
+def lbph_face_recognition():
+    faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml') # load classifier
+    eyeCascade = cv2.CascadeClassifier('haarcascade_eye.xml')
+    eye_glassesCascade = cv2.CascadeClassifier('haarcascade_eye_tree_eyeglasses.xml')
+    smileCascade = cv2.CascadeClassifier('haarcascade_smile.xml')
+    #faceCascade = cv2.CascadeClassifier('lbpcascade_frontalface.xml') # load classifier
+
+    cap = cv2.VideoCapture(0)
+    #face_recognizer = cv2.face.EigenFaceRecognizer_create()
+    face_recognizer=cv2.face.LBPHFaceRecognizer_create()
+    face_recognizer.read("LBPH_Face_Recognizer.yml")
+
+    #Load face labels
+    # with open('face_eye_smile_labels.pickle', 'rb') as f:
+    #     y_train = np.array(pickle.load(f))
+    names = ['Bryan_Lee', 'Bryan_Lim', 'Chin_Fung', 'Darren', 'Edmund', 'John', 'Lam', 
+             'Malvern', 'meinv', 'Nicholas', 'Peter', 'Ter_Ren', 'Wang_Jue', 'Yi_Cheng', 
+             'Yi_Rong', 'Yong_Zhe', 'Yuan_Jun', 'Zhi_jia', 'Zi_Hang', 'Zi_Ying']
+    
+    cap.set(3,640) # set Width
+    cap.set(4,480) # set Height
+    while True:
+        _, frame = cap.read()
+        frame = cv2.flip(frame, 1)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        # detect faces
+        faces = faceCascade.detectMultiScale(
+            gray,     
+            scaleFactor=1.2,
+            minNeighbors=5,     
+            minSize=(5, 5)
+        )
+        found=0
+        for (x,y,w,h) in faces:
+            cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0),2)
+            roi_color = frame[y:y+h, x:x+w]
+            roi_gray = gray[y:y+h, x:x+w]
+    #        roi_gray = cv2.resize(roi_gray, (100,100))
+            eyes = eye_glassesCascade.detectMultiScale(roi_gray, scaleFactor=1.2, minNeighbors=5, minSize=(5,5))
+            for (ex, ey, ew, eh) in eyes:
+                cv2.rectangle(roi_color, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 2)
+    #         smile = smileCascade.detectMultiScale(roi_gray, scaleFactor=1.2, minNeighbors=25, minSize=(120,120))
+    #         for (xx, yy, ww, hh) in smile:
+    #             cv2.rectangle(roi_color, (xx, yy), (xx + ww, yy + hh), (0, 0, 255), 2)
+            gray_face = cv2.resize((gray[y:y+h,x:x+w]),(100,100))
+            label, conf = face_recognizer.predict(gray_face)
+            
+            found=1
+            
+        if (found==1):
+
+            if conf<=120:
+                person = names[label]
+            else:
+                person = "Unknown"
+
+            text = str(label) + person + ":" + str(round(conf,3))
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+            cv2.putText(frame, text, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
+
+        elif (found==0):
+            eyes = eye_glassesCascade.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=5, minSize=(5,5))
+            for (ex, ey, ew, eh) in eyes:
+                roi_gray = gray[ey:ey+eh, ex:ex+ew]
+                cv2.rectangle(frame, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 2)
+        #         smile = smileCascade.detectMultiScale(roi_gray, scaleFactor=1.2, minNeighbors=25, minSize=(120,120))
+        #         for (xx, yy, ww, hh) in smile:
+        #             cv2.rectangle(roi_color, (xx, yy), (xx + ww, yy + hh), (0, 0, 255), 2)
+            #gray_eyes = cv2.resize((gray[y:y+h,x:x+w]),(100,100))
+                label, conf = face_recognizer.predict(gray)
+            if conf<=120:
+                person = names[label]
+
+            else:
+                person = "Unknown"
+
+            text = str(label) + person + ":" + str(round(conf,3))
+            cv2.rectangle(frame, (ex, ey), (ex + ew, ey + eh), (255, 0, 0), 2)
+            cv2.putText(frame, text, (ex, ey - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
+
+        cv2.imshow('frame',frame)
+        k = cv2.waitKey(1) & 0xff
+        if k == 27: # press 'ESC' to quit
+            break
+    cap.release()
+    cv2.destroyAllWindows()
 
 
 # In[ ]:
